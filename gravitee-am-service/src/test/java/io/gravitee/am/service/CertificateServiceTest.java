@@ -67,7 +67,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -382,6 +384,58 @@ public class CertificateServiceTest {
     }
 
     @Test
+<<<<<<< HEAD
+=======
+    public void shouldUpdateCertificate() throws JsonProcessingException {
+        when(certificatePluginService.getSchema(CertificateServiceImpl.DEFAULT_CERTIFICATE_PLUGIN))
+                .thenReturn(Maybe.just(certificateSchemaDefinition));
+        var certificateNode = objectMapper.createObjectNode();
+        var contentNode = objectMapper.createObjectNode();
+        contentNode.put("content", Base64.getEncoder().encode("file-content-cert".getBytes(StandardCharsets.UTF_8)));
+        contentNode.put("name", "test.p12");
+        certificateNode.put("content", objectMapper.writeValueAsString(contentNode));
+        certificateNode.put("alias", "am-server");
+        certificateNode.put("storepass", "server-secret");
+        certificateNode.put("keypass", "incorrect password");
+        var existingCertificate = new Certificate();
+        existingCertificate.setId(UUID.randomUUID().toString());
+        existingCertificate.setName("certificate");
+        existingCertificate.setType(DEFAULT_CERTIFICATE_PLUGIN);
+        existingCertificate.setConfiguration(certificateNode.toString());
+        existingCertificate.setMetadata(new HashMap<>());
+
+        var updatedCert = new UpdateCertificate();
+        updatedCert.setName("certificate");
+        updatedCert.setConfiguration(certificateNode.toString());
+
+        when(certificateRepository.findById(any())).thenReturn(Maybe.just(existingCertificate));
+        when(certificateRepository.update(any())).thenAnswer(answer -> Single.just(answer.getArguments()[0]));
+        when(certificatePluginManager.create(any())).thenReturn(mock(CertificateProvider.class));
+        when(eventService.create(any())).thenReturn(Single.just(new Event()));
+
+        TestObserver<Certificate> testObserver = certificateService.update(DOMAIN_NAME, existingCertificate.getId(), updatedCert, Mockito.mock(User.class)).test();
+        testObserver.awaitDone(10, TimeUnit.SECONDS);
+        testObserver.assertNoErrors();
+    }
+
+    @Test
+    public void shouldNotCreateWhenCertificateFileIsNotFound(){
+        when(certificatePluginService.getSchema(CertificateServiceImpl.DEFAULT_CERTIFICATE_PLUGIN)).thenReturn(Maybe.just(certificateSchemaDefinition));
+        var certificateNode = objectMapper.createObjectNode();
+        certificateNode.put("alias", "am-server");
+        certificateNode.put("storepass", "server-secret");
+        certificateNode.put("keypass", "server-secret");
+        var newCertificate = new NewCertificate();
+        newCertificate.setName("without-file");
+        newCertificate.setType(DEFAULT_CERTIFICATE_PLUGIN);
+        newCertificate.setConfiguration(certificateNode.toString());
+        TestObserver<Certificate> testObserver = certificateService.create(DOMAIN_NAME, newCertificate, Mockito.mock(User.class)).test();
+        testObserver.awaitDone(10, TimeUnit.SECONDS);
+        testObserver.assertError(error -> error instanceof InvalidParameterException && "A valid certificate file was not uploaded. Please make sure to attach one.".equals(error.getMessage()));
+    }
+
+    @Test
+>>>>>>> 1b52d1324 (fix: filter Metadata from the Certificate audits)
     public void unsupportedAlgorithmThrowsException() throws Exception {
         TestObserver<Certificate> testObserver = defaultCertificate(256, "RSASSA-PSS", false);
         testObserver.assertError(IllegalArgumentException.class);
