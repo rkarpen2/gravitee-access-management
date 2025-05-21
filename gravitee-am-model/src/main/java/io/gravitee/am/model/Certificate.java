@@ -27,6 +27,7 @@ import lombok.ToString;
 import org.springframework.util.function.ThrowingFunction;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -86,10 +87,104 @@ public class Certificate {
         this.type = other.type;
         this.configuration = other.configuration;
         this.domain = other.domain;
-        this.metadata = other.metadata;
+        this.metadata = other.metadata != null ? new HashMap<>(other.metadata) : null;
         this.createdAt = other.createdAt;
         this.updatedAt = other.updatedAt;
         this.expiresAt = other.expiresAt;
         this.system = other.system;
     }
+<<<<<<< HEAD
+=======
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(String configuration) {
+        this.configuration = configuration;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public Date getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setExpiresAt(Date expiresAt) {
+        this.expiresAt = expiresAt;
+    }
+
+    public boolean isSystem() {
+        return system;
+    }
+
+    public void setSystem(boolean system) {
+        this.system = system;
+    }
+
+    /**
+     * Clone the certificate instance but reset the MetaData map with an empty & immutable map.
+     * It is used as for example during audit generation
+     * @return
+     */
+    public Certificate asSafeCertificate() {
+        var cert = new Certificate(this);
+        cert.setMetadata(Map.of());
+        return cert;
+    }
+>>>>>>> 1b52d1324 (fix: filter Metadata from the Certificate audits)
 }

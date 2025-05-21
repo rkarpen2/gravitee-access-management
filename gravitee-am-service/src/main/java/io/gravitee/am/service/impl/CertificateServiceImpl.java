@@ -298,6 +298,7 @@ public class CertificateServiceImpl implements CertificateService {
                     }
                 })
                 .flatMap(oldCertificate -> {
+<<<<<<< HEAD
                     try {
                         var certificate = getCertificateToUpdate(updateCertificate, oldCertificate);
                         return certificateRepository.update(getValid(certificate));
@@ -307,6 +308,42 @@ public class CertificateServiceImpl implements CertificateService {
                     } catch (Exception ex) {
                         log.error("An error occurs while trying to update certificate configuration", ex);
                         return Single.error(ex);
+=======
+                    Certificate certificateToUpdate = new Certificate(oldCertificate.getCertificate());
+                    certificateToUpdate.setName(updateCertificate.getName());
+                    certificateToUpdate.setUpdatedAt(new Date());
+                    if (!certificateToUpdate.isSystem()) { // system certificate can't be updated
+                        try {
+                            CertificateSchema certificateSchema = oldCertificate.getSchema();
+                            JsonNode oldCertificateConfiguration = objectMapper.readTree(oldCertificate.getCertificate().getConfiguration());
+                            JsonNode certificateConfiguration = objectMapper.readTree(updateCertificate.getConfiguration());
+                            var key = certificateSchema.getProperties()
+                                    .entrySet()
+                                    .stream()
+                                    .filter(map -> map.getValue().getWidget() != null && "file".equals(map.getValue().getWidget()))
+                                    .map(Map.Entry::getKey)
+                                    .findFirst().orElse(null);
+                            String oldFileInformation = oldCertificateConfiguration.get(key).asText();
+                            String fileInformation = certificateConfiguration.get(key).asText();
+                            // file has changed, let's update it
+                            if (!oldFileInformation.equals(fileInformation)) {
+                                JsonNode file = objectMapper.readTree(certificateConfiguration.get(key).asText());
+                                byte[] data = Base64.getDecoder().decode(file.get(CONTENT).asText());
+                                certificateToUpdate.setMetadata(Maps.newHashMap(Map.of(CertificateMetadata.FILE, data)));
+
+                                // update configuration to set the file path
+                                ((ObjectNode) certificateConfiguration).put(key, file.get(NAME).asText());
+                                updateCertificate.setConfiguration(objectMapper.writeValueAsString(certificateConfiguration));
+                            }
+                            certificateToUpdate.setConfiguration(updateCertificate.getConfiguration());
+                        } catch (IOException ex) {
+                            LOGGER.error("An error occurs while trying to update certificate binaries", ex);
+                            return Single.error(() -> ex);
+                        } catch (Exception ex) {
+                            LOGGER.error("An error occurs while trying to update certificate configuration", ex);
+                            return Single.error(() -> ex);
+                        }
+>>>>>>> 1b52d1324 (fix: filter Metadata from the Certificate audits)
                     }
                 })
                 // create event for sync process
